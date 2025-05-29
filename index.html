@@ -61,15 +61,124 @@
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
             flex-shrink: 0; /* Prevent shrinking */
         }
+
+        /* Animation for append/insert: fly-in */
+        @keyframes fly-in {
+            from {
+                opacity: 0;
+                transform: translate(var(--start-x), var(--start-y)) scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: translate(var(--end-x), var(--end-y)) scale(1);
+            }
+        }
+        .animated-item {
+            position: absolute;
+            z-index: 1000; /* Ensure it's on top */
+            background-color: #4a90e2; /* Match list item color */
+            color: white;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            transition: transform 0.5s ease-out, opacity 0.5s ease-out; /* Fallback/smoothness */
+        }
+
+        /* Animation for pop/remove: fly-out */
+        @keyframes fly-out {
+            from {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translate(0, -50px) scale(0.5); /* Move up and fade out */
+            }
+        }
+        .list-item.is-removing {
+            position: absolute; /* Take it out of flow */
+            animation: fly-out 0.5s ease-in forwards; /* Apply fly-out animation */
+            z-index: 999;
+        }
+
+        /* Animation for index: pulse highlight */
+        @keyframes pulse-highlight {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
         .list-item.highlight {
             background-color: #f59e0b; /* Amber for highlight */
-            transform: scale(1.05);
+            animation: pulse-highlight 1s ease-out; /* Apply pulse animation */
         }
-        .list-item.removed {
-            background-color: #ef4444; /* Red for removed */
-            opacity: 0.5;
-            transform: scale(0.9);
+
+        /* Temporary highlight for insert target */
+        .list-item.insert-target-highlight {
+            background-color: #8b5cf6; /* Purple for target highlight */
+            box-shadow: 0 0 0 3px #8b5cf6;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
+
+        /* Animation for searching (remove/index) */
+        @keyframes searching-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .list-item.searching {
+            animation: searching-pulse 0.3s ease-in-out;
+        }
+
+        /* Animation for value moving to output field (pop) */
+        @keyframes move-to-output {
+            from {
+                opacity: 1;
+                transform: translate(var(--start-x), var(--start-y)) scale(1);
+            }
+            to {
+                opacity: 1;
+                transform: translate(var(--end-x), var(--end-y)) scale(1);
+            }
+        }
+        .pop-output-item {
+            position: absolute;
+            z-index: 1000;
+            background-color: #4a90e2;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+        }
+
+        /* Animation for value moving to final output (pop) */
+        @keyframes move-to-final-output {
+            from {
+                opacity: 1;
+                transform: translate(var(--start-x), var(--start-y)) scale(1);
+            }
+            to {
+                opacity: 1;
+                transform: translate(var(--end-x), var(--end-y)) scale(1);
+            }
+        }
+        .final-output-item {
+            position: absolute;
+            z-index: 1000;
+            background-color: #60a5fa; /* Lighter blue for final output */
+            color: white;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+        }
+
+
         .input-group {
             display: flex;
             flex-direction: column;
@@ -164,6 +273,37 @@
         .function-panel p {
             margin-bottom: 8px; /* Reduced margin */
         }
+        .pop-output-field {
+            background-color: #e0f2f7; /* Light blue */
+            border: 1px solid #a7d9ee;
+            border-radius: 6px;
+            padding: 6px 8px;
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: #0056b3;
+            text-align: center;
+            min-height: 28px; /* Ensure it has some height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative; /* For animation target */
+        }
+        .final-pop-output-field {
+            background-color: #d1fae5; /* Light green */
+            border: 1px solid #34d399;
+            border-radius: 6px;
+            padding: 6px 8px;
+            margin-top: 4px; /* Closer to pop output */
+            font-size: 0.8rem;
+            color: #065f46;
+            text-align: center;
+            min-height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
 
         /* Responsive adjustments */
         @media (min-width: 480px) { /* Small phones landscape, or larger phones portrait */
@@ -237,6 +377,12 @@
                     <input type="number" id="popIndex" placeholder="空欄で末尾を削除">
                 </div>
                 <button class="action-button" onclick="popItem()">削除 (pop)</button>
+                <div id="popOutput" class="pop-output-field mt-2">
+                    print(a.pop(i))
+                </div>
+                <div id="finalPopOutput" class="final-pop-output-field">
+                    出力:
+                </div>
             </div>
 
             <div class="function-panel">
@@ -267,34 +413,76 @@
 
     <script>
         let myList = []; // PythonのリストをシミュレートするJavaScript配列
+        const ANIMATION_DURATION = 500; // アニメーションの持続時間 (ミリ秒)
+        const SEARCH_STEP_DURATION = 300; // 探索アニメーションの各ステップの持続時間
 
         // DOM要素の取得
         const listDisplay = document.getElementById('listDisplay');
         const messageBox = document.getElementById('messageBox');
+        const popOutput = document.getElementById('popOutput');
+        const finalPopOutput = document.getElementById('finalPopOutput');
+
+        /**
+         * 指定されたミリ秒だけ待機するヘルパー関数
+         * @param {number} ms - 待機するミリ秒
+         * @returns {Promise<void>}
+         */
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
 
         /**
          * リストの表示を更新する関数
          * @param {number|null} highlightIndex - ハイライトする要素のインデックス (オプション)
-         * @param {number|null} removedIndex - 削除された要素のインデックス (オプション)
+         * @param {number|null} insertTargetIndex - 挿入ターゲットをハイライトするインデックス (オプション)
          */
-        function updateListDisplay(highlightIndex = null, removedIndex = null) {
+        function updateListDisplay(highlightIndex = null, insertTargetIndex = null) {
             listDisplay.innerHTML = ''; // 現在の表示をクリア
             if (myList.length === 0) {
                 listDisplay.innerHTML = '<p class="text-gray-500 text-sm">リストは空です。</p>';
+                // If inserting into an empty list, show a target highlight at the beginning
+                if (insertTargetIndex === 0) {
+                    const targetDiv = document.createElement('div');
+                    targetDiv.classList.add('list-item', 'insert-target-highlight');
+                    targetDiv.textContent = 'ここに挿入';
+                    listDisplay.appendChild(targetDiv);
+                }
                 return;
             }
+
             myList.forEach((item, index) => {
                 const itemDiv = document.createElement('div');
                 itemDiv.classList.add('list-item');
-                if (index === highlightIndex) {
-                    itemDiv.classList.add('highlight');
-                }
-                if (index === removedIndex) {
-                    itemDiv.classList.add('removed');
-                }
                 itemDiv.textContent = item;
+
+                // Insert target highlight before the actual item at the index
+                if (insertTargetIndex !== null && index === insertTargetIndex) {
+                    const targetDiv = document.createElement('div');
+                    targetDiv.classList.add('list-item', 'insert-target-highlight');
+                    targetDiv.textContent = 'ここに挿入'; // Placeholder for visual target
+                    listDisplay.appendChild(targetDiv);
+                }
+
                 listDisplay.appendChild(itemDiv);
             });
+
+            // Handle insert target highlight for appending to the end
+            if (insertTargetIndex !== null && insertTargetIndex === myList.length) {
+                const targetDiv = document.createElement('div');
+                targetDiv.classList.add('list-item', 'insert-target-highlight');
+                targetDiv.textContent = 'ここに挿入';
+                listDisplay.appendChild(targetDiv);
+            }
+
+            // Apply highlight animation after the DOM is updated
+            if (highlightIndex !== null && listDisplay.children[highlightIndex]) {
+                const highlightedElement = listDisplay.children[highlightIndex];
+                highlightedElement.classList.add('highlight');
+                // Remove highlight after animation duration
+                setTimeout(() => {
+                    highlightedElement.classList.remove('highlight');
+                }, ANIMATION_DURATION * 2); // Longer duration for pulse
+            }
         }
 
         /**
@@ -315,16 +503,58 @@
         // 初期表示
         updateListDisplay();
         showMessage('操作を選択してPythonのリスト関数を試してみましょう！');
+        popOutput.textContent = 'print(a.pop(i))'; // Initial text for pop output
+        finalPopOutput.textContent = '出力:'; // Initial text for final pop output
 
         /**
          * append(x) 関数をシミュレート
          */
-        function appendItem() {
+        async function appendItem() {
             const value = document.getElementById('appendValue').value.trim();
             if (value === '') {
                 showMessage('追加する値を入力してください。', 'error');
                 return;
             }
+
+            const appendInput = document.getElementById('appendValue');
+            const startRect = appendInput.getBoundingClientRect();
+            const listDisplayRect = listDisplay.getBoundingClientRect();
+
+            // アニメーション用の要素を作成
+            const animatedItem = document.createElement('div');
+            animatedItem.classList.add('animated-item');
+            animatedItem.textContent = value;
+            document.body.appendChild(animatedItem);
+
+            // 開始位置を設定 (入力フィールドの場所)
+            animatedItem.style.left = startRect.left + 'px';
+            animatedItem.style.top = startRect.top + 'px';
+
+            // アニメーションの目標位置を計算 (リストの末尾)
+            let targetX, targetY;
+            if (myList.length === 0) {
+                targetX = listDisplayRect.left + listDisplayRect.width / 2 - animatedItem.offsetWidth / 2;
+                targetY = listDisplayRect.top + listDisplayRect.height / 2 - animatedItem.offsetHeight / 2;
+            } else {
+                // 最後の要素の右側に配置
+                const lastItem = listDisplay.lastElementChild;
+                const lastItemRect = lastItem.getBoundingClientRect();
+                targetX = lastItemRect.right + 4; // 4px gap
+                targetY = lastItemRect.top;
+            }
+
+            // CSS変数として目標位置を設定
+            animatedItem.style.setProperty('--start-x', `${startRect.left}px`);
+            animatedItem.style.setProperty('--start-y', `${startRect.top}px`);
+            animatedItem.style.setProperty('--end-x', `${targetX}px`);
+            animatedItem.style.setProperty('--end-y', `${targetY}px`);
+
+            // アニメーションを開始
+            animatedItem.style.animation = `fly-in ${ANIMATION_DURATION / 1000}s ease-out forwards`;
+
+            await sleep(ANIMATION_DURATION);
+
+            animatedItem.remove(); // アニメーション要素を削除
             myList.push(value);
             updateListDisplay(myList.length - 1); // 新しく追加された要素をハイライト
             showMessage(`'${value}' をリストの末尾に追加しました。`, 'success');
@@ -334,7 +564,7 @@
         /**
          * insert(i, x) 関数をシミュレート
          */
-        function insertItem() {
+        async function insertItem() {
             const index = parseInt(document.getElementById('insertIndex').value);
             const value = document.getElementById('insertValue').value.trim();
 
@@ -351,6 +581,56 @@
                 return;
             }
 
+            // まず挿入ターゲットをハイライト
+            updateListDisplay(null, index);
+            await sleep(ANIMATION_DURATION / 2); // 少し待ってハイライトを見せる
+
+            const insertInput = document.getElementById('insertValue');
+            const startRect = insertInput.getBoundingClientRect();
+
+            // アニメーション用の要素を作成
+            const animatedItem = document.createElement('div');
+            animatedItem.classList.add('animated-item');
+            animatedItem.textContent = value;
+            document.body.appendChild(animatedItem);
+
+            // 開始位置を設定 (入力フィールドの場所)
+            animatedItem.style.left = startRect.left + 'px';
+            animatedItem.style.top = startRect.top + 'px';
+
+            // アニメーションの目標位置を計算
+            let targetX, targetY;
+            const listDisplayRect = listDisplay.getBoundingClientRect();
+
+            if (myList.length === 0 || index === myList.length) {
+                // リストが空の場合、または末尾に挿入する場合
+                const lastItemRect = listDisplay.lastElementChild ? listDisplay.lastElementChild.getBoundingClientRect() : listDisplayRect;
+                targetX = lastItemRect.right + 4; // 4px gap
+                targetY = lastItemRect.top;
+                if (myList.length === 0) { // If list is empty, position at the center of listDisplay
+                    targetX = listDisplayRect.left + listDisplayRect.width / 2 - animatedItem.offsetWidth / 2;
+                    targetY = listDisplayRect.top + listDisplayRect.height / 2 - animatedItem.offsetHeight / 2;
+                }
+            } else {
+                // 指定インデックスの要素の位置
+                const targetElement = listDisplay.children[index];
+                const targetRect = targetElement.getBoundingClientRect();
+                targetX = targetRect.left;
+                targetY = targetRect.top;
+            }
+
+            // CSS変数として目標位置を設定
+            animatedItem.style.setProperty('--start-x', `${startRect.left}px`);
+            animatedItem.style.setProperty('--start-y', `${startRect.top}px`);
+            animatedItem.style.setProperty('--end-x', `${targetX}px`);
+            animatedItem.style.setProperty('--end-y', `${targetY}px`);
+
+            // アニメーションを開始
+            animatedItem.style.animation = `fly-in ${ANIMATION_DURATION / 1000}s ease-out forwards`;
+
+            await sleep(ANIMATION_DURATION);
+
+            animatedItem.remove(); // アニメーション要素を削除
             myList.splice(index, 0, value);
             updateListDisplay(index); // 新しく挿入された要素をハイライト
             showMessage(`インデックス ${index} に '${value}' を挿入しました。`, 'success');
@@ -361,10 +641,14 @@
         /**
          * pop() / pop(i) 関数をシミュレート
          */
-        function popItem() {
+        async function popItem() {
             const indexInput = document.getElementById('popIndex').value;
             let removedValue;
             let removedIdx;
+
+            // Clear previous output
+            popOutput.textContent = 'print(a.pop(i))';
+            finalPopOutput.textContent = '出力:';
 
             if (myList.length === 0) {
                 showMessage('リストが空なので、popできません。', 'error');
@@ -372,61 +656,141 @@
             }
 
             if (indexInput === '') { // pop() (末尾を削除)
-                removedValue = myList.pop();
-                removedIdx = myList.length; // 削除される前の末尾のインデックス
-                showMessage(`末尾の要素 '${removedValue}' を削除しました。`, 'success');
+                removedIdx = myList.length - 1; // 削除される要素のインデックス
+                removedValue = myList[removedIdx];
             } else { // pop(i) (指定インデックスを削除)
                 const index = parseInt(indexInput);
                 if (isNaN(index) || index < 0 || index >= myList.length) {
                     showMessage(`インデックス ${index} は無効です。0から${myList.length - 1}の間で指定してください。`, 'error');
                     return;
                 }
-                removedValue = myList.splice(index, 1)[0];
                 removedIdx = index;
-                showMessage(`インデックス ${index} の要素 '${removedValue}' を削除しました。`, 'success');
+                removedValue = myList[removedIdx];
             }
-            // 削除された要素を一時的にハイライトしてから更新
-            const tempMyList = [...myList]; // 削除前のリストを一時的に保持
-            if (removedIdx < tempMyList.length) { // 実際に存在したインデックスの場合のみ
-                tempMyList.splice(removedIdx, 0, removedValue); // 削除された要素を一時的に戻す
-            } else { // 末尾削除の場合、元のリストの末尾に追加
-                tempMyList.push(removedValue);
+
+            const itemToAnimate = listDisplay.children[removedIdx];
+            if (itemToAnimate) {
+                // 要素の現在の位置とサイズを取得し、absoluteにする
+                const rect = itemToAnimate.getBoundingClientRect();
+                itemToAnimate.style.position = 'absolute';
+                itemToAnimate.style.left = rect.left + 'px';
+                itemToAnimate.style.top = rect.top + 'px';
+                itemToAnimate.style.width = rect.width + 'px';
+                itemToAnimate.style.height = rect.height + 'px';
+
+                itemToAnimate.classList.add('is-removing'); // アニメーションクラスを追加
+
+                // 削除された値がpopOutputに移動するアニメーション
+                const popOutputRect = popOutput.getBoundingClientRect();
+
+                const animatedOutputItem = document.createElement('div');
+                animatedOutputItem.classList.add('pop-output-item');
+                animatedOutputItem.textContent = removedValue;
+                document.body.appendChild(animatedOutputItem);
+
+                // 開始位置は削除されるアイテムの位置
+                animatedOutputItem.style.left = rect.left + 'px';
+                animatedOutputItem.style.top = rect.top + 'px';
+
+                // 終了位置はpopOutputフィールドの中央
+                const endX = popOutputRect.left + (popOutputRect.width / 2) - (animatedOutputItem.offsetWidth / 2);
+                const endY = popOutputRect.top + (popOutputRect.height / 2) - (animatedOutputItem.offsetHeight / 2);
+
+                animatedOutputItem.style.setProperty('--start-x', `${rect.left}px`);
+                animatedOutputItem.style.setProperty('--start-y', `${rect.top}px`);
+                animatedOutputItem.style.setProperty('--end-x', `${endX}px`);
+                animatedOutputItem.style.setProperty('--end-y', `${endY}px`);
+
+                animatedOutputItem.style.animation = `move-to-output ${ANIMATION_DURATION / 1000}s ease-out forwards`;
+
+                await sleep(ANIMATION_DURATION); // Wait for item to move to popOutput
+
+                animatedOutputItem.remove(); // Remove the item that moved to popOutput
             }
-            updateListDisplay(null, removedIdx); // 削除された要素を赤く表示
 
-            setTimeout(() => {
-                updateListDisplay(); // 完全に削除された状態に更新
-            }, 500); // 0.5秒後に更新
+            myList.splice(removedIdx, 1); // リストから要素を削除
+            updateListDisplay(); // 表示を更新
+            showMessage(`'${removedValue}' を削除しました。`, 'success');
+            popOutput.textContent = `print(${removedValue})`; // 出力フィールドを更新
 
+            // Now, animate the value from popOutput to finalPopOutput
+            const finalPopOutputRect = finalPopOutput.getBoundingClientRect();
+            const popOutputRect = popOutput.getBoundingClientRect();
+
+            const finalAnimatedItem = document.createElement('div');
+            finalAnimatedItem.classList.add('final-output-item');
+            finalAnimatedItem.textContent = removedValue;
+            document.body.appendChild(finalAnimatedItem);
+
+            // Start position is from the popOutput field
+            finalAnimatedItem.style.left = popOutputRect.left + (popOutputRect.width / 2) - (finalAnimatedItem.offsetWidth / 2) + 'px';
+            finalAnimatedItem.style.top = popOutputRect.top + (popOutputRect.height / 2) - (finalAnimatedItem.offsetHeight / 2) + 'px';
+
+            // End position is the finalPopOutput field
+            const finalEndX = finalPopOutputRect.left + (finalPopOutputRect.width / 2) - (finalAnimatedItem.offsetWidth / 2);
+            const finalEndY = finalPopOutputRect.top + (finalPopOutputRect.height / 2) - (finalAnimatedItem.offsetHeight / 2);
+
+            finalAnimatedItem.style.setProperty('--start-x', `${finalAnimatedItem.style.left}`);
+            finalAnimatedItem.style.setProperty('--start-y', `${finalAnimatedItem.style.top}`);
+            finalAnimatedItem.style.setProperty('--end-x', `${finalEndX}px`);
+            finalAnimatedItem.style.setProperty('--end-y', `${finalEndY}px`);
+
+            finalAnimatedItem.style.animation = `move-to-final-output ${ANIMATION_DURATION / 1000}s ease-out forwards`;
+
+            await sleep(ANIMATION_DURATION); // Wait for item to move to finalPopOutput
+
+            finalAnimatedItem.remove(); // Remove the animated item
+            finalPopOutput.textContent = `出力: ${removedValue}`; // Set final output text
             document.getElementById('popIndex').value = '';
         }
 
         /**
          * remove(x) 関数をシミュレート
          */
-        function removeItem() {
+        async function removeItem() {
             const value = document.getElementById('removeValue').value.trim();
             if (value === '') {
                 showMessage('削除する値を入力してください。', 'error');
                 return;
             }
 
-            const index = myList.indexOf(value);
-            if (index === -1) {
+            let foundIndex = -1;
+            for (let i = 0; i < myList.length; i++) {
+                const itemDiv = listDisplay.children[i];
+                if (!itemDiv) continue; // Safety check
+
+                itemDiv.classList.add('searching'); // 探索アニメーション開始
+                await sleep(SEARCH_STEP_DURATION);
+
+                if (myList[i] === value) {
+                    foundIndex = i;
+                    itemDiv.classList.remove('searching'); // 探索アニメーション終了
+                    break; // 見つかったらループを抜ける
+                } else {
+                    itemDiv.classList.remove('searching'); // 目的の値でなければ元に戻す
+                }
+            }
+
+            if (foundIndex === -1) {
                 showMessage(`'${value}' はリストに見つかりませんでした。`, 'error');
                 return;
             }
 
-            myList.splice(index, 1);
-            // 削除された要素を一時的にハイライトしてから更新
-            const tempMyList = [...myList]; // 削除前のリストを一時的に保持
-            tempMyList.splice(index, 0, value); // 削除された要素を一時的に戻す
-            updateListDisplay(null, index); // 削除された要素を赤く表示
+            const itemToAnimate = listDisplay.children[foundIndex];
+            if (itemToAnimate) {
+                const rect = itemToAnimate.getBoundingClientRect();
+                itemToAnimate.style.position = 'absolute';
+                itemToAnimate.style.left = rect.left + 'px';
+                itemToAnimate.style.top = rect.top + 'px';
+                itemToAnimate.style.width = rect.width + 'px';
+                itemToAnimate.style.height = rect.height + 'px';
+                itemToAnimate.classList.add('is-removing'); // 削除アニメーション開始
+            }
 
-            setTimeout(() => {
-                updateListDisplay(); // 完全に削除された状態に更新
-            }, 500); // 0.5秒後に更新
+            await sleep(ANIMATION_DURATION);
 
+            myList.splice(foundIndex, 1); // リストから要素を削除
+            updateListDisplay(); // 表示を更新
             showMessage(`最初に見つかった '${value}' を削除しました。`, 'success');
             document.getElementById('removeValue').value = '';
         }
@@ -434,20 +798,36 @@
         /**
          * index(x) 関数をシミュレート
          */
-        function findItemIndex() {
+        async function findItemIndex() {
             const value = document.getElementById('indexValue').value.trim();
             if (value === '') {
                 showMessage('検索する値を入力してください。', 'error');
                 return;
             }
 
-            const index = myList.indexOf(value);
-            if (index === -1) {
+            let foundIndex = -1;
+            for (let i = 0; i < myList.length; i++) {
+                const itemDiv = listDisplay.children[i];
+                if (!itemDiv) continue; // Safety check
+
+                itemDiv.classList.add('searching'); // 探索アニメーション開始
+                await sleep(SEARCH_STEP_DURATION);
+
+                if (myList[i] === value) {
+                    foundIndex = i;
+                    itemDiv.classList.remove('searching'); // 探索アニメーション終了
+                    break; // 見つかったらループを抜ける
+                } else {
+                    itemDiv.classList.remove('searching'); // 目的の値でなければ元に戻す
+                }
+            }
+
+            if (foundIndex === -1) {
                 showMessage(`'${value}' はリストに見つかりませんでした。`, 'error');
                 updateListDisplay(); // ハイライトを解除
             } else {
-                updateListDisplay(index); // 見つかった要素をハイライト
-                showMessage(`'${value}' のインデックスは ${index} です。`, 'success');
+                updateListDisplay(foundIndex); // 見つかった要素をハイライト (pulse-highlightアニメーションが適用される)
+                showMessage(`'${value}' のインデックスは ${foundIndex} です。`, 'success');
             }
             document.getElementById('indexValue').value = '';
         }
@@ -459,6 +839,8 @@
             myList = [];
             updateListDisplay();
             showMessage('リストがリセットされました。', 'info');
+            popOutput.textContent = 'print(a.pop(i))'; // Reset pop output text
+            finalPopOutput.textContent = '出力:'; // Reset final pop output text
         }
     </script>
 </body>
