@@ -14,7 +14,7 @@
             justify-content: center;
             align-items: center; /* Center vertically to utilize full height */
             min-height: 100vh; /* Ensure full viewport height */
-            padding: 8px; /* Reduced padding for more space */
+            padding: 10px; /* Reduced padding for more space */
             box-sizing: border-box;
             overflow: hidden; /* Prevent body scrolling */
         }
@@ -42,17 +42,15 @@
             min-height: 40px; /* Further reduced min-height */
             max-height: 80px; /* Max height to prevent excessive vertical growth */
             display: flex;
-            flex-wrap: wrap; /* Allows items to wrap to the next line */
-            gap: 8px; /* Increased from 4px to 8px for better spacing */
+            flex-wrap: wrap;
+            gap: 4px; /* Even smaller gap for items */
             align-items: center;
             justify-content: center; /* Center items for better appearance */
             overflow-x: auto; /* Allow horizontal scroll if many items */
             overflow-y: hidden; /* Hide vertical scrollbar if max-height is hit */
             padding-bottom: 2px; /* Space for scrollbar */
-            /* ▼ 追加・変更箇所 ▼ */
-            list-style: none; /* 箇条書きの点を削除 */
-            padding-left: 0; /* デフォルトの左パディングを削除 */
-            /* ▲ 追加・変更箇所 ▲ */
+            list-style: none; /* Add this to remove any default bullet points */
+            padding-left: 0; /* Remove default padding for list-like elements */
         }
         .list-item {
             background-color: #4a90e2; /* Blue */
@@ -587,7 +585,7 @@
                 return;
             }
             if (index < 0 || index > myList.length) {
-                showMessage(`インデックス <span class="math-inline">\{index\} は無効です。0から</span>{myList.length}の間で指定してください。`, 'error');
+                showMessage(`インデックス ${index} は無効です。0から${myList.length}の間で指定してください。`, 'error');
                 return;
             }
 
@@ -598,7 +596,7 @@
             const insertInput = document.getElementById('insertValue');
             const startRect = insertInput.getBoundingClientRect();
 
-            // アニメーション用の要素を作成
+            // Create animated item
             const animatedItem = document.createElement('div');
             animatedItem.classList.add('animated-item');
             animatedItem.textContent = value;
@@ -646,7 +644,7 @@
             animatedItem.remove(); // Remove animated item
             myList.splice(index, 0, value);
             updateListDisplay(index); // Highlight newly inserted item
-            showMessage(`インデックス <span class="math-inline">\{index\} に '</span>{value}' を挿入しました。`, 'success');
+            showMessage(`インデックス ${index} に '${value}' を挿入しました。`, 'success');
             document.getElementById('insertIndex').value = '';
             document.getElementById('insertValue').value = '';
         }
@@ -674,7 +672,7 @@
             } else { // pop(i) (delete at specified index)
                 const index = parseInt(indexInput);
                 if (isNaN(index) || index < 0 || index >= myList.length) {
-                    showMessage(`インデックス <span class="math-inline">\{index\} は無効です。0から</span>{myList.length - 1}の間で指定してください。`, 'error');
+                    showMessage(`インデックス ${index} は無効です。0から${myList.length - 1}の間で指定してください。`, 'error');
                     return;
                 }
                 removedIdx = index;
