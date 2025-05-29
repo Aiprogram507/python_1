@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python配列学習アプリ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top for better mobile scrolling */
+            min-height: 100vh; /* Ensure full viewport height */
+            padding: 16px; /* Reduced padding for more space */
+            box-sizing: border-box;
+            overflow-y: auto; /* Allow scrolling if content exceeds height, but try to avoid it */
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); /* Slightly smaller shadow */
+            padding: 20px; /* Reduced padding */
+            width: 100%;
+            max-width: 600px;
+            margin-top: 0px; /* No top margin */
+            display: flex;
+            flex-direction: column;
+            gap: 16px; /* Gap between sections */
+        }
+        .list-display-section {
+            background-color: #e2e8f0; /* Lighter gray background */
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        .list-display {
+            min-height: 60px; /* Reduced min-height */
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px; /* Smaller gap for items */
+            align-items: center;
+            justify-content: center; /* Center items for better appearance */
+            overflow-x: auto; /* Allow horizontal scroll if many items */
+            padding-bottom: 4px; /* Space for scrollbar */
+        }
+        .list-item {
+            background-color: #4a90e2; /* Blue */
+            color: white;
+            padding: 6px 10px; /* Reduced padding */
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem; /* Slightly smaller font */
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+        .list-item.highlight {
+            background-color: #f59e0b; /* Amber for highlight */
+            transform: scale(1.05);
+        }
+        .list-item.removed {
+            background-color: #ef4444; /* Red for removed */
+            opacity: 0.5;
+            transform: scale(0.9);
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px; /* Smaller gap */
+            margin-bottom: 10px; /* Smaller margin */
+        }
+        .input-group label {
+            font-weight: 600;
+            color: #475569; /* Slate gray */
+            font-size: 0.875rem; /* text-sm */
+        }
+        .input-group input[type="text"],
+        .input-group input[type="number"] {
+            padding: 8px 10px; /* Reduced padding */
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.9rem; /* Slightly smaller font */
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .action-button {
+            background-color: #10b981; /* Emerald green */
+            color: white;
+            padding: 10px 16px; /* Reduced padding */
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            width: 100%;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1); /* Slightly smaller shadow */
+            font-size: 0.95rem; /* Slightly smaller font */
+        }
+        .action-button:hover {
+            background-color: #059669; /* Darker emerald */
+            transform: translateY(-1px);
+        }
+        .action-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .message-box {
+            background-color: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px; /* Reduced padding */
+            font-size: 0.85rem; /* Smaller font */
+            color: #374151; /* Gray */
+            min-height: 35px; /* Reduced min-height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        .message-box.success {
+            background-color: #d1fae5; /* Light green */
+            border-color: #34d399; /* Green */
+            color: #065f46; /* Dark green */
+        }
+        .message-box.error {
+            background-color: #fee2e2; /* Light red */
+            border-color: #ef4444; /* Red */
+            color: #991b1b; /* Dark red */
+        }
+        .section-title {
+            font-size: 1.1rem; /* text-lg */
+            font-weight: 700; /* font-bold */
+            color: #1f2937; /* Gray-900 */
+            margin-bottom: 10px; /* Reduced margin */
+            text-align: center;
+        }
+
+        /* Responsive adjustments */
+        @media (min-width: 640px) { /* sm breakpoint */
+            .input-group.horizontal {
+                flex-direction: row;
+                align-items: center;
+            }
+            .input-group.horizontal label {
+                flex-shrink: 0;
+                width: 80px; /* Fixed width for labels in horizontal groups */
+            }
+            .input-group.horizontal input {
+                flex-grow: 1;
+            }
+        }
+
+        /* Specific adjustments for smaller screens (e.g., typical phone portrait) */
+        @media (max-width: 767px) {
+            .container {
+                padding: 12px; /* Even less padding on very small screens */
+                gap: 12px; /* Smaller gap */
+            }
+            .grid-cols-1-auto {
+                grid-template-columns: 1fr; /* Force single column on small screens */
+            }
+            .grid-cols-1-auto > div {
+                padding: 12px; /* Reduced padding for function blocks */
+            }
+            .action-button {
+                padding: 9px 14px; /* Even smaller button padding */
+                font-size: 0.9rem;
+            }
+            .input-group input[type="text"],
+            .input-group input[type="number"] {
+                padding: 7px 9px;
+                font-size: 0.85rem;
+            }
+            .list-item {
+                padding: 5px 8px;
+                font-size: 0.8rem;
+            }
+            .message-box {
+                padding: 8px;
+                font-size: 0.8rem;
+            }
+            .section-title {
+                font-size: 1rem;
+                margin-bottom: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-2xl font-extrabold text-center text-gray-900 mb-2">Python配列学習アプリ</h1>
+
+        <div class="list-display-section">
+            <h2 class="section-title">現在のリスト:</h2>
+            <div id="listDisplay" class="list-display">
+                </div>
+        </div>
+
+        <div id="messageBox" class="message-box">
+            ここに操作結果が表示されます。
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-gray-50 p-4 rounded-xl shadow-md">
+                <h2 class="section-title">a.append(x)</h2>
+                <p class="text-gray-600 mb-3 text-xs">リストの末尾に要素を追加します。</p>
+                <div class="input-group">
+                    <label for="appendValue">値:</label>
+                    <input type="text" id="appendValue" placeholder="例: apple">
+                </div>
+                <button class="action-button" onclick="appendItem()">追加 (append)</button>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-xl shadow-md">
+                <h2 class="section-title">a.insert(i, x)</h2>
+                <p class="text-gray-600 mb-3 text-xs">指定したインデックスに要素を挿入します。</p>
+                <div class="input-group horizontal">
+                    <label for="insertIndex">インデックス:</label>
+                    <input type="number" id="insertIndex" placeholder="例: 0">
+                </div>
+                <div class="input-group horizontal">
+                    <label for="insertValue">値:</label>
+                    <input type="text" id="insertValue" placeholder="例: banana">
+                </div>
+                <button class="action-button" onclick="insertItem()">挿入 (insert)</button>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-xl shadow-md">
+                <h2 class="section-title">a.pop() / a.pop(i)</h2>
+                <p class="text-gray-600 mb-3 text-xs">末尾または指定インデックスの要素を削除し、その値を返します。</p>
+                <div class="input-group">
+                    <label for="popIndex">インデックス (オプション):</label>
+                    <input type="number" id="popIndex" placeholder="空欄で末尾を削除">
+                </div>
+                <button class="action-button" onclick="popItem()">削除 (pop)</button>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-xl shadow-md">
+                <h2 class="section-title">a.remove(x)</h2>
+                <p class="text-gray-600 mb-3 text-xs">最初に見つかった指定の値を削除します。</p>
+                <div class="input-group">
+                    <label for="removeValue">削除する値:</label>
+                    <input type="text" id="removeValue" placeholder="例: apple">
+                </div>
+                <button class="action-button" onclick="removeItem()">削除 (remove)</button>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-xl shadow-md col-span-1 md:col-span-2">
+                <h2 class="section-title">a.index(x)</h2>
+                <p class="text-gray-600 mb-3 text-xs">最初に見つかった指定の要素のインデックスを返します。</p>
+                <div class="input-group">
+                    <label for="indexValue">検索する値:</label>
+                    <input type="text" id="indexValue" placeholder="例: banana">
+                </div>
+                <button class="action-button" onclick="findItemIndex()">インデックス検索 (index)</button>
+            </div>
+        </div>
+
+        <button class="action-button bg-purple-600 hover:bg-purple-700 mt-4" onclick="resetList()">
+            リストをリセット
+        </button>
+    </div>
+
+    <script>
+        let myList = []; // PythonのリストをシミュレートするJavaScript配列
+
+        // DOM要素の取得
+        const listDisplay = document.getElementById('listDisplay');
+        const messageBox = document.getElementById('messageBox');
+
+        /**
+         * リストの表示を更新する関数
+         * @param {number|null} highlightIndex - ハイライトする要素のインデックス (オプション)
+         * @param {number|null} removedIndex - 削除された要素のインデックス (オプション)
+         */
+        function updateListDisplay(highlightIndex = null, removedIndex = null) {
+            listDisplay.innerHTML = ''; // 現在の表示をクリア
+            if (myList.length === 0) {
+                listDisplay.innerHTML = '<p class="text-gray-500 text-sm">リストは空です。</p>';
+                return;
+            }
+            myList.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('list-item');
+                if (index === highlightIndex) {
+                    itemDiv.classList.add('highlight');
+                }
+                if (index === removedIndex) {
+                    itemDiv.classList.add('removed');
+                }
+                itemDiv.textContent = item;
+                listDisplay.appendChild(itemDiv);
+            });
+        }
+
+        /**
+         * メッセージボックスにメッセージを表示する関数
+         * @param {string} message - 表示するメッセージ
+         * @param {string} type - 'success', 'error', または 'info'
+         */
+        function showMessage(message, type = 'info') {
+            messageBox.textContent = message;
+            messageBox.className = 'message-box'; // Reset classes
+            if (type === 'success') {
+                messageBox.classList.add('success');
+            } else if (type === 'error') {
+                messageBox.classList.add('error');
+            }
+        }
+
+        // 初期表示
+        updateListDisplay();
+        showMessage('操作を選択してPythonのリスト関数を試してみましょう！');
+
+        /**
+         * append(x) 関数をシミュレート
+         */
+        function appendItem() {
+            const value = document.getElementById('appendValue').value.trim();
+            if (value === '') {
+                showMessage('追加する値を入力してください。', 'error');
+                return;
+            }
+            myList.push(value);
+            updateListDisplay(myList.length - 1); // 新しく追加された要素をハイライト
+            showMessage(`'${value}' をリストの末尾に追加しました。`, 'success');
+            document.getElementById('appendValue').value = ''; // 入力フィールドをクリア
+        }
+
+        /**
+         * insert(i, x) 関数をシミュレート
+         */
+        function insertItem() {
+            const index = parseInt(document.getElementById('insertIndex').value);
+            const value = document.getElementById('insertValue').value.trim();
+
+            if (isNaN(index)) {
+                showMessage('挿入するインデックスを数値で入力してください。', 'error');
+                return;
+            }
+            if (value === '') {
+                showMessage('挿入する値を入力してください。', 'error');
+                return;
+            }
+            if (index < 0 || index > myList.length) {
+                showMessage(`インデックス ${index} は無効です。0から${myList.length}の間で指定してください。`, 'error');
+                return;
+            }
+
+            myList.splice(index, 0, value);
+            updateListDisplay(index); // 新しく挿入された要素をハイライト
+            showMessage(`インデックス ${index} に '${value}' を挿入しました。`, 'success');
+            document.getElementById('insertIndex').value = '';
+            document.getElementById('insertValue').value = '';
+        }
+
+        /**
+         * pop() / pop(i) 関数をシミュレート
+         */
+        function popItem() {
+            const indexInput = document.getElementById('popIndex').value;
+            let removedValue;
+            let removedIdx;
+
+            if (myList.length === 0) {
+                showMessage('リストが空なので、popできません。', 'error');
+                return;
+            }
+
+            if (indexInput === '') { // pop() (末尾を削除)
+                removedValue = myList.pop();
+                removedIdx = myList.length; // 削除される前の末尾のインデックス
+                showMessage(`末尾の要素 '${removedValue}' を削除しました。`, 'success');
+            } else { // pop(i) (指定インデックスを削除)
+                const index = parseInt(indexInput);
+                if (isNaN(index) || index < 0 || index >= myList.length) {
+                    showMessage(`インデックス ${index} は無効です。0から${myList.length - 1}の間で指定してください。`, 'error');
+                    return;
+                }
+                removedValue = myList.splice(index, 1)[0];
+                removedIdx = index;
+                showMessage(`インデックス ${index} の要素 '${removedValue}' を削除しました。`, 'success');
+            }
+            // 削除された要素を一時的にハイライトしてから更新
+            const tempMyList = [...myList]; // 削除前のリストを一時的に保持
+            if (removedIdx < tempMyList.length) { // 実際に存在したインデックスの場合のみ
+                tempMyList.splice(removedIdx, 0, removedValue); // 削除された要素を一時的に戻す
+            } else { // 末尾削除の場合、元のリストの末尾に追加
+                tempMyList.push(removedValue);
+            }
+            updateListDisplay(null, removedIdx); // 削除された要素を赤く表示
+
+            setTimeout(() => {
+                updateListDisplay(); // 完全に削除された状態に更新
+            }, 500); // 0.5秒後に更新
+
+            document.getElementById('popIndex').value = '';
+        }
+
+        /**
+         * remove(x) 関数をシミュレート
+         */
+        function removeItem() {
+            const value = document.getElementById('removeValue').value.trim();
+            if (value === '') {
+                showMessage('削除する値を入力してください。', 'error');
+                return;
+            }
+
+            const index = myList.indexOf(value);
+            if (index === -1) {
+                showMessage(`'${value}' はリストに見つかりませんでした。`, 'error');
+                return;
+            }
+
+            myList.splice(index, 1);
+            // 削除された要素を一時的にハイライトしてから更新
+            const tempMyList = [...myList]; // 削除前のリストを一時的に保持
+            tempMyList.splice(index, 0, value); // 削除された要素を一時的に戻す
+            updateListDisplay(null, index); // 削除された要素を赤く表示
+
+            setTimeout(() => {
+                updateListDisplay(); // 完全に削除された状態に更新
+            }, 500); // 0.5秒後に更新
+
+            showMessage(`最初に見つかった '${value}' を削除しました。`, 'success');
+            document.getElementById('removeValue').value = '';
+        }
+
+        /**
+         * index(x) 関数をシミュレート
+         */
+        function findItemIndex() {
+            const value = document.getElementById('indexValue').value.trim();
+            if (value === '') {
+                showMessage('検索する値を入力してください。', 'error');
+                return;
+            }
+
+            const index = myList.indexOf(value);
+            if (index === -1) {
+                showMessage(`'${value}' はリストに見つかりませんでした。`, 'error');
+                updateListDisplay(); // ハイライトを解除
+            } else {
+                updateListDisplay(index); // 見つかった要素をハイライト
+                showMessage(`'${value}' のインデックスは ${index} です。`, 'success');
+            }
+            document.getElementById('indexValue').value = '';
+        }
+
+        /**
+         * リストをリセットする関数
+         */
+        function resetList() {
+            myList = [];
+            updateListDisplay();
+            showMessage('リストがリセットされました。', 'info');
+        }
+    </script>
+</body>
+</html>
