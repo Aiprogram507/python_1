@@ -43,7 +43,7 @@
             max-height: 80px; /* Max height to prevent excessive vertical growth */
             display: flex;
             flex-wrap: wrap;
-            gap: 4px; /* Even smaller gap for items */
+            gap: 8px; /* Increased gap for better spacing */
             align-items: center;
             justify-content: center; /* Center items for better appearance */
             overflow-x: auto; /* Allow horizontal scroll if many items */
@@ -51,6 +51,7 @@
             padding-bottom: 2px; /* Space for scrollbar */
             list-style: none; /* Add this to remove any default bullet points */
             padding-left: 0; /* Remove default padding for list-like elements */
+            position: relative; /* For absolute positioning of animated items */
         }
         .list-item {
             background-color: #4a90e2; /* Blue */
@@ -64,15 +65,22 @@
             flex-shrink: 0; /* Prevent shrinking */
         }
 
-        /* Animation for append/insert: fly-in */
-        @keyframes fly-in {
-            from {
+        /* Animation for append/insert: materialize */
+        @keyframes materialize {
+            0% {
                 opacity: 0;
-                transform: scale(0.5) translate(0, 0); /* Start at its initial position, scaled */
+                transform: scale(0.1) rotate(0deg);
+                box-shadow: 0 0 0 0 rgba(74, 144, 226, 0.7);
             }
-            to {
+            70% {
                 opacity: 1;
-                transform: scale(1) translate(var(--delta-x), var(--delta-y)); /* Move to final position */
+                transform: scale(1.2) rotate(10deg); /* Slight overshoot and rotation */
+                box-shadow: 0 0 0 15px rgba(74, 144, 226, 0);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+                box-shadow: 0 0 0 0 rgba(74, 144, 226, 0);
             }
         }
         .animated-item {
@@ -85,62 +93,94 @@
             font-weight: 600;
             font-size: 0.8rem;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            /* transition removed as animation will handle movement */
+            animation: materialize 0.6s ease-out forwards; /* Apply materialize animation */
         }
 
-        /* Animation for pop/remove: fly-out */
-        @keyframes fly-out {
-            from {
+        /* Animation for pop/remove: vanish */
+        @keyframes vanish {
+            0% {
                 opacity: 1;
-                transform: translate(0, 0) scale(1);
+                transform: translate(0, 0) scale(1) rotate(0deg);
             }
-            to {
+            100% {
                 opacity: 0;
-                transform: translate(0, -50px) scale(0.5); /* Move up and fade out */
+                transform: translate(0, -70px) scale(0) rotate(90deg); /* Move up, scale to 0, rotate */
             }
         }
         .list-item.is-removing {
             position: absolute; /* Take it out of flow */
-            animation: fly-out 0.5s ease-in forwards; /* Apply fly-out animation */
+            animation: vanish 0.5s ease-in forwards; /* Apply vanish animation */
             z-index: 999;
         }
 
-        /* Animation for index: pulse highlight */
-        @keyframes pulse-highlight {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
-            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        /* New: Pop Flash */
+        @keyframes pop-flash {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 0, 0.7); transform: scale(1); }
+            50% { box-shadow: 0 0 20px 10px rgba(255, 255, 0, 1); transform: scale(1.2); } /* Bright yellow glow */
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 0, 0); transform: scale(1); }
+        }
+        .list-item.pop-flash {
+            animation: pop-flash 0.3s ease-out forwards; /* Quick flash */
+        }
+
+        /* Animation for index: lock-on */
+        @keyframes lock-on {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); border: 2px solid transparent;}
+            50% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0.5); border: 2px solid #f59e0b;}
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); border: 2px solid transparent;}
         }
         .list-item.highlight {
             background-color: #f59e0b; /* Amber for highlight */
-            animation: pulse-highlight 1s ease-out; /* Apply pulse animation */
+            animation: lock-on 1s ease-out; /* Apply lock-on animation */
         }
 
-        /* Temporary highlight for insert target */
+        /* Temporary highlight for insert target: rift-pulse */
+        @keyframes rift-pulse {
+            0%, 100% { background-color: #8b5cf6; box-shadow: 0 0 0 3px #8b5cf6; }
+            50% { background-color: #a78bfa; box-shadow: 0 0 0 10px rgba(139, 92, 246, 0.5); }
+        }
         .list-item.insert-target-highlight {
-            background-color: #8b5cf6; /* Purple for target highlight */
-            box-shadow: 0 0 0 3px #8b5cf6;
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            animation: rift-pulse 0.8s ease-in-out infinite alternate; /* Pulsing highlight */
+        }
+        /* New: Delete target highlight */
+        .list-item.delete-target-highlight {
+            background-color: #ef4444; /* Red for delete target */
+            color: white;
+            box-shadow: 0 0 0 3px #ef4444;
+            animation: rift-pulse 0.8s ease-in-out infinite alternate; /* Reusing rift-pulse for a dramatic effect */
+            white-space: nowrap; /* Prevent text wrapping */
+            padding: 6px 12px; /* Slightly more padding for the text "ここを削除" */
+            min-width: fit-content; /* Ensure it expands to fit content */
+            text-align: center; /* Ensure text is centered */
+            display: flex; /* Use flex to center content vertically/horizontally */
+            align-items: center;
+            justify-content: center;
+            position: absolute; /* Crucial for initial positioning */
         }
 
-        /* Animation for searching (remove/index) */
-        @keyframes searching-pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+
+        /* Animation for searching (remove/index): scan-pulse */
+        @keyframes scan-pulse {
+            0%, 100% { transform: scale(1); background-color: #4a90e2; }
+            50% { transform: scale(1.1); background-color: #6ee7b7; box-shadow: 0 0 0 5px rgba(110, 231, 183, 0.7); } /* Change color to light green during search */
         }
         .list-item.searching {
-            animation: searching-pulse 0.3s ease-in-out;
+            animation: scan-pulse 0.4s ease-in-out; /* Faster scan pulse */
         }
 
-        /* Animation for value moving to output field (pop) */
-        @keyframes move-to-output {
-            from {
+        /* Animation for value moving to output field (pop): warp-out-to-output */
+        @keyframes warp-out-to-output {
+            0% {
                 opacity: 1;
-                transform: translate(0, 0); /* Start at its initial absolute position */
+                transform: translate(0, 0) scale(1) rotate(0deg);
             }
-            to {
+            40% { /* Mid-warp, slightly distorted/fading */
+                opacity: 0.2;
+                transform: translate(var(--delta-x) * 0.4, var(--delta-y) * 0.4) scale(0.5) rotate(30deg);
+            }
+            100% {
                 opacity: 1;
-                transform: translate(var(--delta-x), var(--delta-y)); /* Move to target */
+                transform: translate(var(--delta-x), var(--delta-y)) scale(0.9) rotate(0deg);
             }
         }
         .pop-output-item {
@@ -153,18 +193,22 @@
             font-weight: 600;
             font-size: 0.8rem;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            /* transition removed */
+            animation: warp-out-to-output 0.6s ease-out forwards; /* Apply new warp animation */
         }
 
-        /* Animation for value moving to final output (pop) */
-        @keyframes move-to-final-output {
-            from {
-                opacity: 1;
-                transform: translate(0, 0); /* Start at its initial absolute position */
+        /* Animation for value moving to final output (pop): warp-in-to-final-output */
+        @keyframes warp-in-to-final-output {
+            0% {
+                opacity: 0;
+                transform: translate(var(--delta-x), var(--delta-y)) scale(0.5) rotate(-30deg); /* Start from target, scaled down and rotated */
             }
-            to {
+            60% {
                 opacity: 1;
-                transform: translate(var(--delta-x), var(--delta-y)); /* Move to target */
+                transform: translate(var(--delta-x), var(--delta-y)) scale(1.1) rotate(5deg); /* Overshoot */
+            }
+            100% {
+                opacity: 1;
+                transform: translate(var(--delta-x), var(--delta-y)) scale(1) rotate(0deg);
             }
         }
         .final-output-item {
@@ -177,7 +221,7 @@
             font-weight: 600;
             font-size: 0.8rem;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            /* transition removed */
+            animation: warp-in-to-final-output 0.5s ease-out forwards; /* Apply new warp-in animation */
         }
 
 
@@ -417,6 +461,9 @@
         let myList = []; // PythonのリストをシミュレートするJavaScript配列
         const ANIMATION_DURATION = 500; // アニメーションの持続時間 (ミリ秒)
         const SEARCH_STEP_DURATION = 300; // 探索アニメーションの各ステップの持続時間
+        const FLASH_DURATION = 300; // 光るアニメーションの持続時間
+        const WARP_DURATION_1 = 600; // pop-output-itemへのワープ時間
+        const WARP_DURATION_2 = 500; // final-output-itemへのワープ時間
 
         // DOM要素の取得
         const listDisplay = document.getElementById('listDisplay');
@@ -558,7 +605,7 @@
             animatedItem.style.setProperty('--delta-y', `${deltaY}px`);
 
             // Start animation
-            animatedItem.style.animation = `fly-in ${ANIMATION_DURATION / 1000}s ease-out forwards`;
+            animatedItem.style.animation = `materialize ${ANIMATION_DURATION / 1000}s ease-out forwards`;
 
             await sleep(ANIMATION_DURATION);
 
@@ -637,7 +684,7 @@
             animatedItem.style.setProperty('--delta-y', `${deltaY}px`);
 
             // Start animation
-            animatedItem.style.animation = `fly-in ${ANIMATION_DURATION / 1000}s ease-out forwards`;
+            animatedItem.style.animation = `materialize ${ANIMATION_DURATION / 1000}s ease-out forwards`;
 
             await sleep(ANIMATION_DURATION);
 
@@ -680,18 +727,55 @@
             }
 
             const itemToAnimate = listDisplay.children[removedIdx];
+            let rect = null;
+            let placeholderItem = null;
+
             if (itemToAnimate) {
-                // Get current position and size of the element, then make it absolute
-                const rect = itemToAnimate.getBoundingClientRect();
-                itemToAnimate.style.position = 'absolute';
-                itemToAnimate.style.left = rect.left + 'px';
-                itemToAnimate.style.top = rect.top + 'px';
-                itemToAnimate.style.width = rect.width + 'px';
-                itemToAnimate.style.height = rect.height + 'px';
+                rect = itemToAnimate.getBoundingClientRect();
 
-                itemToAnimate.classList.add('is-removing'); // Start fly-out animation
+                // Create and position the "ここを削除" placeholder
+                placeholderItem = document.createElement('div');
+                placeholderItem.classList.add('list-item', 'delete-target-highlight');
+                placeholderItem.textContent = 'ここを削除';
+                
+                // Set initial absolute position to match the original item's rect
+                placeholderItem.style.position = 'absolute';
+                placeholderItem.style.left = rect.left + 'px';
+                placeholderItem.style.top = rect.top + 'px';
+                document.body.appendChild(placeholderItem); // Append to body
 
-                // Animate removed value moving to popOutput field
+                // Now that it's in the DOM, get its actual rendered size and center it
+                const placeholderWidth = placeholderItem.offsetWidth;
+                const placeholderHeight = placeholderItem.offsetHeight;
+                placeholderItem.style.left = rect.left + (rect.width / 2) - (placeholderWidth / 2) + 'px';
+                placeholderItem.style.top = rect.top + (rect.height / 2) - (placeholderHeight / 2) + 'px';
+                
+                // Hide the original item immediately
+                itemToAnimate.style.visibility = 'hidden';
+
+                // Apply pop-flash animation to the placeholder
+                placeholderItem.classList.add('pop-flash');
+                await sleep(FLASH_DURATION); // Wait for flash to complete
+
+                // Start vanish animation on the placeholder
+                placeholderItem.classList.remove('pop-flash'); // Remove flash class
+                placeholderItem.classList.add('is-removing');
+            }
+
+            // Wait for the vanish animation to complete on the placeholder
+            await sleep(ANIMATION_DURATION); // ANIMATION_DURATION is 0.5s for vanish
+
+            // Perform the actual list modification and update display
+            myList.splice(removedIdx, 1);
+            updateListDisplay(); // This will re-render the list without the removed item
+
+            // Remove the placeholder from DOM after its animation
+            if (placeholderItem) {
+                placeholderItem.remove();
+            }
+
+            // Animate removed value from its *original* position to popOutput field
+            if (rect) { // Only if an item was actually removed and its rect captured
                 const popOutputRect = popOutput.getBoundingClientRect();
 
                 const animatedOutputItem = document.createElement('div');
@@ -707,28 +791,26 @@
                 const targetX_popOutput = popOutputRect.left + (popOutputRect.width / 2) - (animatedOutputItem.offsetWidth / 2);
                 const targetY_popOutput = popOutputRect.top + (popOutputRect.height / 2) - (animatedOutputItem.offsetHeight / 2);
 
-                // Calculate delta for transform
                 const deltaX_popOutput = targetX_popOutput - rect.left;
                 const deltaY_popOutput = targetY_popOutput - rect.top;
 
                 animatedOutputItem.style.setProperty('--delta-x', `${deltaX_popOutput}px`);
                 animatedOutputItem.style.setProperty('--delta-y', `${deltaY_popOutput}px`);
 
-                animatedOutputItem.style.animation = `move-to-output ${ANIMATION_DURATION / 1000}s ease-out forwards`;
+                // Use the new warp-out-to-output animation
+                animatedOutputItem.style.animation = `warp-out-to-output ${WARP_DURATION_1 / 1000}s ease-out forwards`;
 
-                await sleep(ANIMATION_DURATION); // Wait for item to move to popOutput
+                await sleep(WARP_DURATION_1); // Wait for warp-out animation
 
                 animatedOutputItem.remove(); // Remove the item that moved to popOutput
             }
 
-            myList.splice(removedIdx, 1); // Remove item from list
-            updateListDisplay(); // Update display
             showMessage(`'${removedValue}' を削除しました。`, 'success');
             popOutput.textContent = `print(${removedValue})`; // Update pop output field
 
-            // Now, animate the value from popOutput to finalPopOutput
+            // Animate the value from popOutput to finalPopOutput
             const finalPopOutputRect = finalPopOutput.getBoundingClientRect();
-            const popOutputRect = popOutput.getBoundingClientRect();
+            const popOutputRect = popOutput.getBoundingClientRect(); // Recalculate as layout might have shifted slightly
 
             const finalAnimatedItem = document.createElement('div');
             finalAnimatedItem.classList.add('final-output-item');
@@ -746,16 +828,16 @@
             const endX_final = finalPopOutputRect.left + (finalPopOutputRect.width / 2) - (finalAnimatedItem.offsetWidth / 2);
             const endY_final = finalPopOutputRect.top + (finalPopOutputRect.height / 2) - (finalAnimatedItem.offsetHeight / 2);
 
-            // Calculate delta for transform
             const deltaX_final = endX_final - startX_final;
             const deltaY_final = endY_final - startY_final;
 
             finalAnimatedItem.style.setProperty('--delta-x', `${deltaX_final}px`);
             finalAnimatedItem.style.setProperty('--delta-y', `${deltaY_final}px`);
 
-            finalAnimatedItem.style.animation = `move-to-final-output ${ANIMATION_DURATION / 1000}s ease-out forwards`;
+            // Use the new warp-in-to-final-output animation
+            finalAnimatedItem.style.animation = `warp-in-to-final-output ${WARP_DURATION_2 / 1000}s ease-out forwards`;
 
-            await sleep(ANIMATION_DURATION); // Wait for item to move to finalPopOutput
+            await sleep(WARP_DURATION_2); // Wait for item to move to finalPopOutput
 
             finalAnimatedItem.remove(); // Remove the animated item
             finalPopOutput.textContent = `出力: ${removedValue}`; // Set final output text
