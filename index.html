@@ -66,11 +66,11 @@
         @keyframes fly-in {
             from {
                 opacity: 0;
-                transform: translate(var(--start-x), var(--start-y)) scale(0.5);
+                transform: scale(0.5) translate(0, 0); /* Start at its initial position, scaled */
             }
             to {
                 opacity: 1;
-                transform: translate(var(--end-x), var(--end-y)) scale(1);
+                transform: scale(1) translate(var(--delta-x), var(--delta-y)); /* Move to final position */
             }
         }
         .animated-item {
@@ -83,7 +83,7 @@
             font-weight: 600;
             font-size: 0.8rem;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            transition: transform 0.5s ease-out, opacity 0.5s ease-out; /* Fallback/smoothness */
+            /* transition removed as animation will handle movement */
         }
 
         /* Animation for pop/remove: fly-out */
@@ -134,11 +134,11 @@
         @keyframes move-to-output {
             from {
                 opacity: 1;
-                transform: translate(var(--start-x), var(--start-y)) scale(1);
+                transform: translate(0, 0); /* Start at its initial absolute position */
             }
             to {
                 opacity: 1;
-                transform: translate(var(--end-x), var(--end-y)) scale(1);
+                transform: translate(var(--delta-x), var(--delta-y)); /* Move to target */
             }
         }
         .pop-output-item {
@@ -151,18 +151,18 @@
             font-weight: 600;
             font-size: 0.8rem;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+            /* transition removed */
         }
 
         /* Animation for value moving to final output (pop) */
         @keyframes move-to-final-output {
             from {
                 opacity: 1;
-                transform: translate(var(--start-x), var(--start-y)) scale(1);
+                transform: translate(0, 0); /* Start at its initial absolute position */
             }
             to {
                 opacity: 1;
-                transform: translate(var(--end-x), var(--end-y)) scale(1);
+                transform: translate(var(--delta-x), var(--delta-y)); /* Move to target */
             }
         }
         .final-output-item {
@@ -175,7 +175,7 @@
             font-weight: 600;
             font-size: 0.8rem;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+            /* transition removed */
         }
 
 
@@ -518,7 +518,6 @@
 
             const appendInput = document.getElementById('appendValue');
             const startRect = appendInput.getBoundingClientRect();
-            const listDisplayRect = listDisplay.getBoundingClientRect();
 
             // アニメーション用の要素を作成
             const animatedItem = document.createElement('div');
@@ -532,33 +531,40 @@
 
             // アニメーションの目標位置を計算 (リストの末尾)
             let targetX, targetY;
+            const listDisplayRect = listDisplay.getBoundingClientRect();
+
             if (myList.length === 0) {
-                targetX = listDisplayRect.left + listDisplayRect.width / 2 - animatedItem.offsetWidth / 2;
-                targetY = listDisplayRect.top + listDisplayRect.height / 2 - animatedItem.offsetHeight / 2;
+                // If list is empty, target the center of the list display
+                targetX = listDisplayRect.left + (listDisplayRect.width / 2) - (animatedItem.offsetWidth / 2);
+                targetY = listDisplayRect.top + (listDisplayRect.height / 2) - (animatedItem.offsetHeight / 2);
             } else {
-                // 最後の要素の右側に配置
+                // Target position is after the last item in the list
+                // Need to get the actual position where the new item will settle
+                // This requires a temporary item or a more complex calculation based on current items' positions
                 const lastItem = listDisplay.lastElementChild;
                 const lastItemRect = lastItem.getBoundingClientRect();
                 targetX = lastItemRect.right + 4; // 4px gap
                 targetY = lastItemRect.top;
             }
 
-            // CSS変数として目標位置を設定
-            animatedItem.style.setProperty('--start-x', `${startRect.left}px`);
-            animatedItem.style.setProperty('--start-y', `${startRect.top}px`);
-            animatedItem.style.setProperty('--end-x', `${targetX}px`);
-            animatedItem.style.setProperty('--end-y', `${targetY}px`);
+            // Calculate delta for transform
+            const deltaX = targetX - startRect.left;
+            const deltaY = targetY - startRect.top;
 
-            // アニメーションを開始
+            // Set CSS variables for animation
+            animatedItem.style.setProperty('--delta-x', `${deltaX}px`);
+            animatedItem.style.setProperty('--delta-y', `${deltaY}px`);
+
+            // Start animation
             animatedItem.style.animation = `fly-in ${ANIMATION_DURATION / 1000}s ease-out forwards`;
 
             await sleep(ANIMATION_DURATION);
 
-            animatedItem.remove(); // アニメーション要素を削除
+            animatedItem.remove(); // Remove animated item
             myList.push(value);
-            updateListDisplay(myList.length - 1); // 新しく追加された要素をハイライト
+            updateListDisplay(myList.length - 1); // Highlight newly added item
             showMessage(`'${value}' をリストの末尾に追加しました。`, 'success');
-            document.getElementById('appendValue').value = ''; // 入力フィールドをクリア
+            document.getElementById('appendValue').value = ''; // Clear input
         }
 
         /**
@@ -581,58 +587,61 @@
                 return;
             }
 
-            // まず挿入ターゲットをハイライト
+            // First, highlight the insert target
             updateListDisplay(null, index);
-            await sleep(ANIMATION_DURATION / 2); // 少し待ってハイライトを見せる
+            await sleep(ANIMATION_DURATION / 2); // Wait to show highlight
 
             const insertInput = document.getElementById('insertValue');
             const startRect = insertInput.getBoundingClientRect();
 
-            // アニメーション用の要素を作成
+            // Create animated item
             const animatedItem = document.createElement('div');
             animatedItem.classList.add('animated-item');
             animatedItem.textContent = value;
             document.body.appendChild(animatedItem);
 
-            // 開始位置を設定 (入力フィールドの場所)
+            // Set initial position
             animatedItem.style.left = startRect.left + 'px';
             animatedItem.style.top = startRect.top + 'px';
 
-            // アニメーションの目標位置を計算
+            // Calculate target position in the list
             let targetX, targetY;
             const listDisplayRect = listDisplay.getBoundingClientRect();
 
-            if (myList.length === 0 || index === myList.length) {
-                // リストが空の場合、または末尾に挿入する場合
-                const lastItemRect = listDisplay.lastElementChild ? listDisplay.lastElementChild.getBoundingClientRect() : listDisplayRect;
+            if (myList.length === 0) {
+                // If list is empty, target the center of list display
+                targetX = listDisplayRect.left + (listDisplayRect.width / 2) - (animatedItem.offsetWidth / 2);
+                targetY = listDisplayRect.top + (listDisplayRect.height / 2) - (animatedItem.offsetHeight / 2);
+            } else if (index === myList.length) {
+                // If inserting at the end, target after the last item
+                const lastItem = listDisplay.lastElementChild;
+                const lastItemRect = lastItem.getBoundingClientRect();
                 targetX = lastItemRect.right + 4; // 4px gap
                 targetY = lastItemRect.top;
-                if (myList.length === 0) { // If list is empty, position at the center of listDisplay
-                    targetX = listDisplayRect.left + listDisplayRect.width / 2 - animatedItem.offsetWidth / 2;
-                    targetY = listDisplayRect.top + listDisplayRect.height / 2 - animatedItem.offsetHeight / 2;
-                }
             } else {
-                // 指定インデックスの要素の位置
+                // Target position is the specified index item's position
                 const targetElement = listDisplay.children[index];
                 const targetRect = targetElement.getBoundingClientRect();
                 targetX = targetRect.left;
                 targetY = targetRect.top;
             }
 
-            // CSS変数として目標位置を設定
-            animatedItem.style.setProperty('--start-x', `${startRect.left}px`);
-            animatedItem.style.setProperty('--start-y', `${startRect.top}px`);
-            animatedItem.style.setProperty('--end-x', `${targetX}px`);
-            animatedItem.style.setProperty('--end-y', `${targetY}px`);
+            // Calculate delta for transform
+            const deltaX = targetX - startRect.left;
+            const deltaY = targetY - startRect.top;
 
-            // アニメーションを開始
+            // Set CSS variables for animation
+            animatedItem.style.setProperty('--delta-x', `${deltaX}px`);
+            animatedItem.style.setProperty('--delta-y', `${deltaY}px`);
+
+            // Start animation
             animatedItem.style.animation = `fly-in ${ANIMATION_DURATION / 1000}s ease-out forwards`;
 
             await sleep(ANIMATION_DURATION);
 
-            animatedItem.remove(); // アニメーション要素を削除
+            animatedItem.remove(); // Remove animated item
             myList.splice(index, 0, value);
-            updateListDisplay(index); // 新しく挿入された要素をハイライト
+            updateListDisplay(index); // Highlight newly inserted item
             showMessage(`インデックス ${index} に '${value}' を挿入しました。`, 'success');
             document.getElementById('insertIndex').value = '';
             document.getElementById('insertValue').value = '';
@@ -656,9 +665,9 @@
             }
 
             if (indexInput === '') { // pop() (末尾を削除)
-                removedIdx = myList.length - 1; // 削除される要素のインデックス
+                removedIdx = myList.length - 1; // Index of item to be removed
                 removedValue = myList[removedIdx];
-            } else { // pop(i) (指定インデックスを削除)
+            } else { // pop(i) (delete at specified index)
                 const index = parseInt(indexInput);
                 if (isNaN(index) || index < 0 || index >= myList.length) {
                     showMessage(`インデックス ${index} は無効です。0から${myList.length - 1}の間で指定してください。`, 'error');
@@ -670,7 +679,7 @@
 
             const itemToAnimate = listDisplay.children[removedIdx];
             if (itemToAnimate) {
-                // 要素の現在の位置とサイズを取得し、absoluteにする
+                // Get current position and size of the element, then make it absolute
                 const rect = itemToAnimate.getBoundingClientRect();
                 itemToAnimate.style.position = 'absolute';
                 itemToAnimate.style.left = rect.left + 'px';
@@ -678,9 +687,9 @@
                 itemToAnimate.style.width = rect.width + 'px';
                 itemToAnimate.style.height = rect.height + 'px';
 
-                itemToAnimate.classList.add('is-removing'); // アニメーションクラスを追加
+                itemToAnimate.classList.add('is-removing'); // Start fly-out animation
 
-                // 削除された値がpopOutputに移動するアニメーション
+                // Animate removed value moving to popOutput field
                 const popOutputRect = popOutput.getBoundingClientRect();
 
                 const animatedOutputItem = document.createElement('div');
@@ -688,18 +697,20 @@
                 animatedOutputItem.textContent = removedValue;
                 document.body.appendChild(animatedOutputItem);
 
-                // 開始位置は削除されるアイテムの位置
+                // Set initial position of animated output item (from where the removed item was)
                 animatedOutputItem.style.left = rect.left + 'px';
                 animatedOutputItem.style.top = rect.top + 'px';
 
-                // 終了位置はpopOutputフィールドの中央
-                const endX = popOutputRect.left + (popOutputRect.width / 2) - (animatedOutputItem.offsetWidth / 2);
-                const endY = popOutputRect.top + (popOutputRect.height / 2) - (animatedOutputItem.offsetHeight / 2);
+                // Calculate target position for popOutput field (center of it)
+                const targetX_popOutput = popOutputRect.left + (popOutputRect.width / 2) - (animatedOutputItem.offsetWidth / 2);
+                const targetY_popOutput = popOutputRect.top + (popOutputRect.height / 2) - (animatedOutputItem.offsetHeight / 2);
 
-                animatedOutputItem.style.setProperty('--start-x', `${rect.left}px`);
-                animatedOutputItem.style.setProperty('--start-y', `${rect.top}px`);
-                animatedOutputItem.style.setProperty('--end-x', `${endX}px`);
-                animatedOutputItem.style.setProperty('--end-y', `${endY}px`);
+                // Calculate delta for transform
+                const deltaX_popOutput = targetX_popOutput - rect.left;
+                const deltaY_popOutput = targetY_popOutput - rect.top;
+
+                animatedOutputItem.style.setProperty('--delta-x', `${deltaX_popOutput}px`);
+                animatedOutputItem.style.setProperty('--delta-y', `${deltaY_popOutput}px`);
 
                 animatedOutputItem.style.animation = `move-to-output ${ANIMATION_DURATION / 1000}s ease-out forwards`;
 
@@ -708,10 +719,10 @@
                 animatedOutputItem.remove(); // Remove the item that moved to popOutput
             }
 
-            myList.splice(removedIdx, 1); // リストから要素を削除
-            updateListDisplay(); // 表示を更新
+            myList.splice(removedIdx, 1); // Remove item from list
+            updateListDisplay(); // Update display
             showMessage(`'${removedValue}' を削除しました。`, 'success');
-            popOutput.textContent = `print(${removedValue})`; // 出力フィールドを更新
+            popOutput.textContent = `print(${removedValue})`; // Update pop output field
 
             // Now, animate the value from popOutput to finalPopOutput
             const finalPopOutputRect = finalPopOutput.getBoundingClientRect();
@@ -722,18 +733,23 @@
             finalAnimatedItem.textContent = removedValue;
             document.body.appendChild(finalAnimatedItem);
 
-            // Start position is from the popOutput field
-            finalAnimatedItem.style.left = popOutputRect.left + (popOutputRect.width / 2) - (finalAnimatedItem.offsetWidth / 2) + 'px';
-            finalAnimatedItem.style.top = popOutputRect.top + (popOutputRect.height / 2) - (finalAnimatedItem.offsetHeight / 2) + 'px';
+            // Start position is from the center of popOutput field
+            const startX_final = popOutputRect.left + (popOutputRect.width / 2) - (finalAnimatedItem.offsetWidth / 2);
+            const startY_final = popOutputRect.top + (popOutputRect.height / 2) - (finalAnimatedItem.offsetHeight / 2);
 
-            // End position is the finalPopOutput field
-            const finalEndX = finalPopOutputRect.left + (finalPopOutputRect.width / 2) - (finalAnimatedItem.offsetWidth / 2);
-            const finalEndY = finalPopOutputRect.top + (finalPopOutputRect.height / 2) - (finalAnimatedItem.offsetHeight / 2);
+            finalAnimatedItem.style.left = startX_final + 'px';
+            finalAnimatedItem.style.top = startY_final + 'px';
 
-            finalAnimatedItem.style.setProperty('--start-x', `${finalAnimatedItem.style.left}`);
-            finalAnimatedItem.style.setProperty('--start-y', `${finalAnimatedItem.style.top}`);
-            finalAnimatedItem.style.setProperty('--end-x', `${finalEndX}px`);
-            finalAnimatedItem.style.setProperty('--end-y', `${finalEndY}px`);
+            // End position is the center of finalPopOutput field
+            const endX_final = finalPopOutputRect.left + (finalPopOutputRect.width / 2) - (finalAnimatedItem.offsetWidth / 2);
+            const endY_final = finalPopOutputRect.top + (finalPopOutputRect.height / 2) - (finalAnimatedItem.offsetHeight / 2);
+
+            // Calculate delta for transform
+            const deltaX_final = endX_final - startX_final;
+            const deltaY_final = endY_final - startY_final;
+
+            finalAnimatedItem.style.setProperty('--delta-x', `${deltaX_final}px`);
+            finalAnimatedItem.style.setProperty('--delta-y', `${deltaY_final}px`);
 
             finalAnimatedItem.style.animation = `move-to-final-output ${ANIMATION_DURATION / 1000}s ease-out forwards`;
 
